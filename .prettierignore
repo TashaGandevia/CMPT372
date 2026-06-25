@@ -1,0 +1,4 @@
+# Generated / vendored files Prettier should not reformat.
+dist
+node_modules
+package-lock.json
