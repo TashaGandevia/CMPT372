@@ -1,12 +1,12 @@
 // Placeholder between Databases and Shipped. Content will be added when the
-// course reaches Web Security.
+// course reaches Authentication and Authorization.
 export default [
   {
-    id: 'z5_skip_security',
-    zone: 'z5',
+    id: 'z6_skip_auth',
+    zone: 'z6',
     type: 'skip',
     difficulty: 'easy',
-    prompt: 'Web Security content has not been added yet.',
+    prompt: 'Authentication and Authorization content has not been added yet.',
     answer: 'SKIP',
     explain: 'SKIP placeholder: this checkpoint keeps the full-stack journey in order until course notes are available.',
   },

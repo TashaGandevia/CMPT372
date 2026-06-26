@@ -40,7 +40,9 @@ export function buildRunForZone(
     .map((id) => content.getChallenge(id))
     .filter(Boolean);
   return buildRun({
-    zoneChallenges: content.challengesForZone(zoneId),
+    zoneChallenges: content
+      .challengesForZone(zoneId)
+      .filter((challenge) => !challenge.isBoss),
     reviewCandidates,
     ...opts,
   });

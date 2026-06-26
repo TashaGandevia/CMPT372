@@ -8,6 +8,10 @@ import zone2 from './zone2.js';
 import zone3 from './zone3.js';
 import zone4 from './zone4.js';
 import zone5 from './zone5.js';
+import zone6 from './zone6.js';
+import zone7 from './zone7.js';
+import zone8 from './zone8.js';
+import zone9 from './zone9.js';
 
 // Challenges grouped by zone id.
 export const CHALLENGES_BY_ZONE = {
@@ -16,6 +20,10 @@ export const CHALLENGES_BY_ZONE = {
   z3: zone3,
   z4: zone4,
   z5: zone5,
+  z6: zone6,
+  z7: zone7,
+  z8: zone8,
+  z9: zone9,
 };
 
 // Flat list of every challenge across all zones.

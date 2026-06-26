@@ -1,17 +1,13 @@
-// BossScreen (INF-4 stub → SYS-5 M1 harness) — flow state BOSS.
-//
-// Real boss encounters arrive in M3; until then this drives the engine to
-// exercise the lives system: it starts a 3-life boss run on entry, lets you
-// take hits (wrong answers) or win, and — per the GDD — failing (losing all
-// lives) retries the boss, not the whole zone. Winning records progress
-// (completeRun) and advances to RESULTS.
-import { useEffect } from 'react';
-import { Button, ComboMeter } from '../components';
+import { useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Button, Card, ComboMeter } from '../components';
+import { slideUp } from '../lib/motion.js';
+import { useContent } from '../state/contentContext.js';
 import { useFlow } from '../state/flowContext.js';
 import { selectBossFailed } from '../state/selectors.js';
-import ScreenStub from './ScreenStub.jsx';
 
 export default function BossScreen() {
+  const content = useContent();
   const game = useFlow();
   const {
     zoneId,
@@ -20,66 +16,123 @@ export default function BossScreen() {
     answer,
     completeRun,
     winBoss,
-    retryBoss,
     openPause,
   } = game;
+  const zone = content.zones.find((item) => item.id === zoneId);
   const failed = selectBossFailed(game);
 
-  // Start a boss run (3 lives) on entry if not already in one.
   useEffect(() => {
-    if (!run || !run.isBoss) startRun(zoneId ?? 'z1', { isBoss: true });
-    // Run once on mount; startRun/run intentionally omitted.
+    if (run?.isBoss) return;
+
+    const zoneChallenges = content.challengesForZone(zoneId ?? 'z1');
+    const boss =
+      zoneChallenges.find((challenge) => challenge.isBoss) ?? zoneChallenges[0];
+
+    const queue =
+      boss?.type === 'skip' ? [boss] : [boss, boss, boss].filter(Boolean);
+
+    startRun(zoneId ?? 'z1', {
+      isBoss: true,
+      queue,
+    });
+    // Start only when this screen mounts without a boss run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const submit = (correct) =>
+  const currentChallenge = run?.queue?.[run.index] ?? null;
+  const MiniGame = useMemo(
+    () => content.resolveMiniGame(currentChallenge?.type),
+    [content, currentChallenge?.type]
+  );
+
+  const handleAnswer = (correct, meta = {}) => {
+    const challenge = meta.challenge ?? currentChallenge;
     answer({
       correct,
-      difficulty: 'hard',
-      challengeId: `${zoneId ?? 'z1'}_boss_${run?.index ?? 0}`,
+      difficulty: challenge?.difficulty ?? 'hard',
+      challengeId: challenge?.id,
     });
+  };
 
-  const handleWin = () => {
-    completeRun(); // record progress / unlock next zone
-    winBoss(); // BOSS → RESULTS
+  const handleComplete = () => {
+    if (run?.correct > 0 || currentChallenge?.type === 'skip') {
+      completeRun();
+      winBoss();
+      return;
+    }
+
+    if (!run?.queue?.length || run.index >= run.queue.length) {
+      completeRun();
+      winBoss();
+    }
+  };
+
+  const handleRetry = () => {
+    startRun(zoneId ?? 'z1', {
+      isBoss: true,
+      queue: run?.queue ?? [],
+    });
   };
 
   return (
-    <ScreenStub
-      title="Boss"
-      subtitle={`Zone ${zoneId ?? '?'} boss — M1 harness (M3)`}
-    >
-      {run?.isBoss && (
-        <div className="w-full text-sm text-text-muted">
-          Lives: {run.lives > 0 ? '❤'.repeat(run.lives) : '0'} · correct{' '}
-          {run.correct}/{run.total}
-        </div>
-      )}
-      <div className="w-full">
-        <ComboMeter />
-      </div>
+    <div className="min-h-screen p-4 sm:p-6">
+      <motion.div
+        {...slideUp}
+        className="mx-auto flex w-full max-w-4xl flex-col gap-4"
+      >
+        <Card className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                Boss checkpoint
+              </p>
+              <h1 className="mt-1 text-2xl font-bold text-text">
+                {zone?.name ?? 'Boss'}
+              </h1>
+            </div>
+            <Button variant="ghost" onClick={openPause}>
+              Pause
+            </Button>
+          </div>
 
-      {failed ? (
-        <>
-          <p className="w-full font-semibold text-zone5-600">
-            Out of lives! Retry the boss.
-          </p>
-          <Button onClick={retryBoss}>Retry boss</Button>
-        </>
-      ) : (
-        <>
-          <Button onClick={handleWin}>Defeat boss</Button>
-          <Button variant="ghost" onClick={() => submit(true)}>
-            Answer correct
-          </Button>
-          <Button variant="secondary" onClick={() => submit(false)}>
-            Take a hit
-          </Button>
-        </>
-      )}
-      <Button variant="ghost" onClick={openPause}>
-        Pause
-      </Button>
-    </ScreenStub>
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-center">
+            <div className="text-sm text-text-muted">
+              Lives: {run?.lives ?? 0}
+            </div>
+            <ComboMeter />
+          </div>
+        </Card>
+
+        {failed ? (
+          <Card className="flex flex-col gap-4 text-left">
+            <h2 className="text-xl font-bold text-text">
+              Try the checkpoint again
+            </h2>
+            <p className="text-text-muted">
+              Boss encounters use lives. Retry this checkpoint without replaying
+              the whole zone.
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={handleRetry}>Retry boss</Button>
+            </div>
+          </Card>
+        ) : currentChallenge ? (
+          <MiniGame
+            key={`${currentChallenge.id}-${run?.index ?? 0}`}
+            challenge={currentChallenge}
+            onAnswer={handleAnswer}
+            onComplete={handleComplete}
+          />
+        ) : (
+          <Card className="flex flex-col gap-4 text-left">
+            <h2 className="text-xl font-bold text-text">Checkpoint clear</h2>
+            <p className="text-text-muted">No boss content has been added yet.</p>
+            <div className="flex justify-end">
+              <Button onClick={handleComplete}>Continue</Button>
+            </div>
+          </Card>
+        )}
+      </motion.div>
+    </div>
   );
 }
