@@ -24,8 +24,14 @@ export const ZONES = [
     theme: 'Front End: Angular, React',
     accent: 'zone2',
     order: 2,
-    status: 'locked-content',
-    concepts: ['Components', 'state', 'rendering'],
+    status: 'playable',
+    concepts: [
+      'Components',
+      'Angular bindings',
+      'React hooks',
+      'routing',
+      'Virtual DOM',
+    ],
   },
   {
     id: 'z3',
