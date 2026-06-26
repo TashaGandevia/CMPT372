@@ -39,8 +39,15 @@ export const ZONES = [
     theme: 'Node JS',
     accent: 'zone3',
     order: 3,
-    status: 'locked-content',
-    concepts: ['Server-side scripting', 'modules', 'NPM'],
+    status: 'playable',
+    concepts: [
+      'Server-side scripting',
+      'event loop',
+      'modules',
+      'NPM',
+      'Express',
+      'MVC',
+    ],
   },
   {
     id: 'z4',
